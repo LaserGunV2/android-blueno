@@ -1,36 +1,56 @@
 package com.tesblunolibrary;
 
+import java.util.ArrayList;
+
 import com.bluno.BlunoConnection;
 import com.bluno.BlunoConnection.connectionStateEnum;
 import com.bluno.BlunoHandler;
 
 import android.support.v7.app.ActionBarActivity;
+import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
-public class MainActivity extends ActionBarActivity implements BlunoHandler,OnClickListener
+public class MainActivity extends ActionBarActivity implements BlunoHandler,OnClickListener,UIHandler,OnItemClickListener
 {
 	protected BlunoConnection bluConn;
 	protected Button btnConnect;
+	protected Button btnScan;
 	protected TextView outText;
+	protected ListView listViewAddress;
+	protected ArrayAdapter<String> btAddressAdapter;
+	protected ThreadedUIHandler threadedUIHandler;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
+		threadedUIHandler=new ThreadedUIHandler(this, this.getMainLooper());
 		bluConn=new BlunoConnection(this,this);
 		setContentView(R.layout.activity_main);
 		btnConnect=(Button)this.findViewById(R.id.btnConnect);
-		outText=(TextView)this.findViewById(R.id.editTextOut);
+		btnScan=(Button)this.findViewById(R.id.btnScan);
+		outText=(TextView)this.findViewById(R.id.textViewOut);
+		listViewAddress=(ListView)this.findViewById(R.id.listViewBTAddress);
+		btAddressAdapter=new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
+		listViewAddress.setAdapter(btAddressAdapter);
+		//btAddressAdapter.add("abc");
+		//btAddressAdapter.add("def");
 		btnConnect.setOnClickListener(this);
-		
+		btnScan.setOnClickListener(this);
+		listViewAddress.setOnItemClickListener(this);
 	}
 
 	@Override
@@ -58,7 +78,7 @@ public class MainActivity extends ActionBarActivity implements BlunoHandler,OnCl
 	@Override
 	public void onDataReceived(String data1, String data2, String data3)
 	{
-		Log.v("OUT", data1+data2+data3);
+		//Log.v("OUT", data1+data2+data3);
 		outText.setText(data1+data2+data3);
 	}
 
@@ -76,6 +96,85 @@ public class MainActivity extends ActionBarActivity implements BlunoHandler,OnCl
 		{
 			bluConn.connect("88:33:14:D6:B1:84");
 		}
+		else if (v==btnScan)
+		{
+			bluConn.scanForBleDevices();
+		}
+		
+	}
+
+	@Override
+	public void onScanCompleted(ArrayList<BluetoothDevice> deviceList)
+	{
+		threadedUIHandler.setFoundBTAddresses(deviceList);
+		
+		
+	}
+
+	@Override
+	public void appendDebug(String s)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void clearDebug()
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setAndroidId(String androidId)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setUIMode(int uiMode)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setStatus(String status)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setDebugStatus(String debugStatus)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setPlayerAliveStatus(boolean isPlayerAlive)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setFoundBTAddresses(ArrayList<BluetoothDevice> deviceList)
+	{
+		btAddressAdapter.clear();
+		for (BluetoothDevice device:deviceList)
+		{
+			btAddressAdapter.add(device.getAddress());
+		}
+		
+	}
+
+	@Override
+	public void onItemClick(AdapterView<?> list, View view, int idx, long id)
+	{
+		//Log.v("TEST", btAddressAdapter.getItem(idx));
 		
 	}
 }

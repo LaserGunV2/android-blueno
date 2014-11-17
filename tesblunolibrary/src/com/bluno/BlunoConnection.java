@@ -1,7 +1,11 @@
 package com.bluno;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import com.bluno.scanner.BlunoScanner;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -56,6 +60,7 @@ public class BlunoConnection implements LeScanCallback{
         	if(mConnectionState==connectionStateEnum.isConnecting)
         		mConnectionState=connectionStateEnum.isToScan;
 			onConnectionStateChange(mConnectionState);
+			Log.v(this.getClass().getName(), "state change:"+mConnectionState.toString());
 			mBluetoothLeService.close();
 		}};
 		
@@ -99,6 +104,8 @@ public class BlunoConnection implements LeScanCallback{
             else if (BLEService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 isBLEConnected = false;
             	handler.removeCallbacks(mDisconnectingOverTimeRunnable);
+            	mConnectionState=connectionStateEnum.isDisconnecting;
+            	onConnectionStateChange(mConnectionState);
             	mBluetoothLeService.close();
             } 
             else if (BLEService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
@@ -144,6 +151,11 @@ public class BlunoConnection implements LeScanCallback{
     };
     //methods
     
+    protected BlunoScanner addressScanner;
+    
+    
+    
+    
 	public BlunoConnection(Context context,BlunoHandler handler)
 	{
 		mainContext=context;	
@@ -177,6 +189,8 @@ public class BlunoConnection implements LeScanCallback{
 		}
 	    mainContext.registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
 	    //akhir dr onResume
+	    
+	    this.addressScanner=new BlunoScanner(bleAdapter, handler);
 	}
 	
 	public void setBlunoHandler(BlunoHandler handlerIn){
@@ -191,16 +205,17 @@ public class BlunoConnection implements LeScanCallback{
 			this.bleDevice = device;
 			if (mBluetoothLeService.connect(bleDevice.getAddress())) {
 		        Log.d(TAG, "Connect request success");
-	        	mConnectionState=connectionStateEnum.isConnecting;
+	        	mConnectionState=connectionStateEnum.isConnected;
 	        	onConnectionStateChange(mConnectionState);
 	            handler.postDelayed(mConnectingOverTimeRunnable, 10000);
+	            
         	}
 	        else {
 		        Log.d(TAG, "Connect request fail");
 	        	mConnectionState=connectionStateEnum.isToScan;
 	        	onConnectionStateChange(mConnectionState);
 			}
-			scanLeDevice(false);
+			//scanLeDevice(false);
 		}
 	}
 
@@ -234,6 +249,7 @@ public class BlunoConnection implements LeScanCallback{
 	}
 
 	public void onConnectionStateChange(connectionStateEnum theconnectionStateEnum){
+		Log.v(this.getClass().getName(), "on state changed");
 		bleHandler.onConnectionStateChange(theconnectionStateEnum);
 	}
 	
@@ -268,9 +284,13 @@ public class BlunoConnection implements LeScanCallback{
 	}
 	
 	public void onSerialReceived(String dataReceived){
+		Log.v(this.getClass().getName(), "data recv!");
 		String[] tokens=dataReceived.split("#");
-		if (!tokens[0].equals("H"))
+		if ((tokens.length>=3)&&(!tokens[0].equals("H")))
+		{
+			Log.v(this.getClass().getName(), "data rec:"+Arrays.toString(tokens));
 			bleHandler.onDataReceived(tokens[0], tokens[1], tokens[2]);
+		}
 	}
 	
 	public void connect(String address){
@@ -414,20 +434,14 @@ public class BlunoConnection implements LeScanCallback{
         
     }
 	
-	public ArrayList<BluetoothDevice> scanForBleDevices()
+	public void scanForBleDevices()
 	{
-		return null;
+		this.addressScanner.startScan();
+		Log.v(this.getClass().getName(), "start scan");
 	}
 	
-	public void savePairedBluenoAddress()
+	public connectionStateEnum getConnectionState()
 	{
-		
+		return this.mConnectionState;
 	}
-	
-	public void loadPairedBlunoAddress()
-	{
-		
-	}
-	
-	
 }

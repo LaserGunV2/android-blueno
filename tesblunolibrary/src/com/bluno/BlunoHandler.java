@@ -1,9 +1,15 @@
 package com.bluno;
 
+import java.util.ArrayList;
+
+import android.bluetooth.BluetoothDevice;
+
 import com.bluno.BlunoConnection.connectionStateEnum;
 
-public interface BlunoHandler {
+public interface BlunoHandler 
+{
 	
-	public void onDataReceived(String data1, String data2, String data3);
+	public void onDataReceived(String strGunId, String strCounter, String strSensorId);
 	public void onConnectionStateChange(connectionStateEnum theconnectionStateEnum);
+	public void onScanCompleted(ArrayList<BluetoothDevice> deviceList);
 }
